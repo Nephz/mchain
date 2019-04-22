@@ -1,0 +1,1 @@
+* The text files consist of fake news content of articles (subset of the FakeNewsCorpus dataset.)
