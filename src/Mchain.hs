@@ -13,8 +13,9 @@ type Tar = T.Text
 type Iter = (Integer, Integer)
 
 type Walks = [(Src, Tar)]
-type TarFreq = (Tar, Rational)
-type WalkMap = M.HashMap Src [TarFreq]
+
+type FreqMap = M.HashMap Tar Rational
+type WalkMap = M.HashMap Src FreqMap
 
 genChain :: (R.MonadRandom m) => WalkMap -> T.Text -> Iter -> m T.Text
 genChain tm txt (cur, stop) =
@@ -25,7 +26,7 @@ genList tm txt (cur, stop)
   | not (T.null txt) &&
     (cur == stop || DM.isNothing tar) = return [txt]
   | otherwise = 
-    R.fromList (DM.fromJust tar) >>= \x ->
+    R.fromList (M.toList $ DM.fromJust tar) >>= \x ->
       genList tm x (cur+1, stop) >>= \xs ->
         return $ result txt xs
   where
@@ -34,28 +35,23 @@ genList tm txt (cur, stop)
                  | otherwise = t : ssl
     tar = M.lookup txt tm  
 
---            new          old
-addWalk :: [TarFreq] -> [TarFreq] -> [TarFreq]
-addWalk [(t, f)] ts = 
-  case maybeKey t ts of
-    Nothing -> (t,  f ) : ts
-    Just n  -> (t, n+f) : filter (\(x, _) -> (x /= t)) ts
-addWalk _ ts = ts 
-
-maybeKey :: (Eq x) => x -> [(x, y)] -> Maybe y
-maybeKey _ [] = Nothing
-maybeKey k ((x,y):xys) | k == x    = Just y
-                       | otherwise = maybeKey k xys
+-- "new" value is always only a singleton, so we flip the arguments in fold to get the evaluation: 
+-- (pls new.value old)
+-- otherwise we would get a chain (as the old value could have multiple elements.)
+-- (pls old1 (old2 (old3 new.value)))
+--            new        old
+addWalks :: FreqMap -> FreqMap -> FreqMap
+addWalks a b = M.foldrWithKey pls b a 
+  where
+    pls k v kvs =
+      case M.lookup k kvs of
+        Nothing -> M.insert k v kvs
+        Just n  -> M.insert k (v+n) kvs
 
 walkMap :: Walks -> WalkMap
-walkMap = DL.foldl' insert M.empty
+walkMap l = DL.foldl' insert M.empty l
   where
-    insert l (s, t) = M.insertWith addWalk s [(t, 1)] l
-
--- walkMap :: Walks -> WalkMap
--- walkMap = DL.foldr insert M.empty
---   where
---     insert (s, t) = M.insertWith addWalk s [(t, 1)]
+    insert l (s, t) = M.insertWith addWalks s (M.singleton t 1) l
 
 walks :: [T.Text] -> Walks
 walks [] = []
