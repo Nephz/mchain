@@ -11,7 +11,7 @@ main :: IO ()
 main = do
   file <- prompt "File to Read: "
   ls   <- fmap T.lines (T.readFile file)
-  putStrLn "The first chain generated will take some time."
+  putStrLn "It will take longer time to generate the first chain"
   let wm = walkMap $ walks ls
   loop ls wm
 

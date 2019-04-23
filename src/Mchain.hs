@@ -35,10 +35,10 @@ genList tm txt (cur, stop)
                  | otherwise = t : ssl
     tar = M.lookup txt tm  
 
--- "new" value is always only a singleton, so we flip the arguments in fold to get the evaluation: 
--- (pls new.value old)
+-- "new" value is always only a singleton, so we flip the arguments in fold to get the evaluation: (let pls = f)
+-- (f new old)
 -- otherwise we would get a chain (as the old value could have multiple elements.)
--- (pls old1 (old2 (old3 new.value)))
+-- (f old1 (f old2 (f old3 new)))
 --            new        old
 addWalks :: FreqMap -> FreqMap -> FreqMap
 addWalks a b = M.foldrWithKey pls b a 
@@ -49,7 +49,7 @@ addWalks a b = M.foldrWithKey pls b a
         Just n  -> M.insert k (v+n) kvs
 
 walkMap :: Walks -> WalkMap
-walkMap l = DL.foldl' insert M.empty l
+walkMap = DL.foldl' insert M.empty
   where
     insert l (s, t) = M.insertWith addWalks s (M.singleton t 1) l
 
