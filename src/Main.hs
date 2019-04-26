@@ -20,7 +20,7 @@ loop ls wm = do
   n  <- prompt "Iterations of chain: "
   s  <- prompt "String to start with: "
   putStrLn "Generating chain..."
-  ss <- genChain wm (T.pack s) (1, (read n :: Integer))
+  ss <- genChain wm (T.pack s) (0, (read n :: Integer))
   let t = replacing filt ss 
   print t
   ans <- prompt "\n> run again? y/n: "
